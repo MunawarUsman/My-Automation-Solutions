@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated User Account Recovery and Secure Re-Authentication Workflow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f6f8fa;
+            color: #24292e;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 30px;
+            border-radius: 6px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        h1, h2, h3 {
+            color: #0366d6;
+            border-bottom: 1px solid #eaecef;
+            padding-bottom: 0.3em;
+        }
+        h1 {
+            font-size: 2em;
+        }
+        h2 {
+            font-size: 1.5em;
+            margin-top: 1.5em;
+        }
+        h3 {
+            font-size: 1.25em;
+            margin-top: 1.25em;
+        }
+        pre {
+            background-color: #f6f8fa;
+            padding: 16px;
+            overflow: auto;
+            border-radius: 3px;
+            font-size: 85%;
+            line-height: 1.45;
+        }
+        code {
+            background-color: rgba(27,31,35,0.05);
+            border-radius: 3px;
+            font-size: 85%;
+            margin: 0;
+            padding: 0.2em 0.4em;
+        }
+        pre code {
+            padding: 0;
+            background: transparent;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+        th, td {
+            border: 1px solid #dfe2e5;
+            padding: 6px 13px;
+            text-align: left;
+        }
+        th {
+            background-color: #f6f8fa;
+            font-weight: 600;
+        }
+        a {
+            color: #0366d6;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .meta-info {
+            background-color: #f1f8ff;
+            padding: 10px 15px;
+            border-left: 4px solid #0366d6;
+            margin-bottom: 20px;
+            border-radius: 3px;
+        }
+        .download-btn {
+            display: block;
+            width: 200px;
+            margin: 20px auto;
+            padding: 10px;
+            background-color: #0366d6;
+            color: white;
+            text-align: center;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .download-btn:hover {
+            background-color: #0256b3;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="#" class="download-btn" onclick="downloadPage()">Download as HTML</a>
+    
+    <div class="container">
+        <h1>Automated User Account Recovery and Secure Re-Authentication Workflow</h1>
+        
+        <div class="meta-info">
+            <strong>Document ID:</strong> ITSOP101<br>
+            <strong>Version:</strong> 1.0<br>
+            <strong>Last Updated:</strong> 20240513<br>
+            <strong>Author:</strong> Munawar Usman<br>
+            <strong>Status:</strong> Approved
+        </div>
+
+        <h2>1. Objective</h2>
+        <p>To define a secure, automated, and user-friendly workflow for handling user account lockouts due to failed login attempts. This process ensures that:</p>
+        <ol>
+            <li>Security is maintained by automatically locking accounts after excessive failed attempts.</li>
+            <li>Users are notified immediately and provided with a direct path to self-remediate.</li>
+            <li>A secure Multi-Factor Authentication (MFA) gate is enforced before granting access post-recovery.</li>
+            <li>Users who cannot complete the process are clearly instructed to contact the IT Help Desk.</li>
+        </ol>
+
+        <h2>2. Scope</h2>
+        <p>This workflow applies to all user accounts within the corporate Azure Active Directory (Azure AD) tenant. It leverages the following technologies:</p>
+        <ul>
+            <li><strong>Azure AD:</strong> For identity management, password policies, and Self-Service Password Reset (SSPR).</li>
+            <li><strong>Splunk:</strong> As a Security Information and Event Management (SIEM) tool to detect account lockout events.</li>
+            <li><strong>Microsoft Power Automate:</strong> To orchestrate automated notifications.</li>
+            <li><strong>Conditional Access:</strong> To enforce MFA upon successful password reset.</li>
+        </ul>
+
+        <h2>3. Prerequisites</h2>
+        <ul>
+            <li>Azure AD Premium P1 or P2 licenses (for Conditional Access and SSPR).</li>
+            <li>Splunk instance with data ingestion configured for Windows Security Event Logs.</li>
+            <li>Microsoft Power Automate.</li>
+            <li>A configured SSPR portal (e.g., <code>https://passwordreset.microsoftonline.com</code>).</li>
+        </ul>
+
+        <h2>4. Workflow Overview</h2>
+        <p>The following sequence diagram illustrates the automated account recovery process:</p>
+        <pre><code>sequenceDiagram
+    participant User
+    participant Azure AD
+    participant Splunk
+    participant PowerAutomate
+    participant IT Help Desk
+
+    User->>Azure AD: Enters wrong password (3x)
+    Azure AD->>Azure AD: Locks account&lt;br&gt;Logs Event ID 4740
+    Splunk->>Splunk: Detects Event ID 4740
+    Splunk->>PowerAutomate: Triggers Webhook with user details
+    PowerAutomate->>User: Sends notification email with SSPR link
+    User->>Azure AD: Clicks link, verifies identity, resets password
+    Azure AD->>Azure AD: Automatically unlocks account
+    User->>Azure AD: Attempts login with new password
+    Azure AD->>User: Prompts for MFA (Conditional Access)
+    
+    alt MFA Success
+        User->>Azure AD: Provides correct MFA token
+        Azure AD->>User: Grants access 🎉
+    else MFA Failure
+        User->>Azure AD: Provides wrong/no MFA token
+        Azure AD->>User: Blocks login, account remains locked
+        User->>IT Help Desk: Contacts for manual support
+    end</code></pre>
+
+        <h2>5. Step-by-Step Configuration</h2>
+
+        <h3>5.1. Configure Azure AD Account Lockout & SSPR Policies</h3>
+        <ol>
+            <li>Navigate: Azure Entra Admin Center &gt; Protection &gt; Password reset.</li>
+            <li>Configure Properties:
+                <ul>
+                    <li>Set Self-Service Password Reset to <code>All</code>.</li>
+                </ul>
+            </li>
+            <li>Configure Authentication Methods:
+                <ul>
+                    <li>Select methods users can use to verify their identity (e.g., Mobile phone, Email).</li>
+                </ul>
+            </li>
+            <li>Configure Password Protection:
+                <ul>
+                    <li>Custom Banned Passwords: Enforce a custom list.</li>
+                    <li>Lockout Threshold: Set to <code>3</code> invalid attempts.</li>
+                    <li>Lockout Duration: Set to <code>0</code> (admin must unlock) or <code>300</code> seconds (5-minute auto-unlock). *For this workflow, <code>0</code> is recommended for higher security, as SSPR will facilitate the unlock.*</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>5.2. Create a Conditional Access Policy for MFA</h3>
+        <ol>
+            <li>Navigate: Azure Entra Admin Center &gt; Protection &gt; Conditional Access.</li>
+            <li>Create New Policy:
+                <ul>
+                    <li>Name: <code>Require MFA for All User Logins</code></li>
+                    <li>Users and Groups: Select <code>All users</code>.</li>
+                    <li>Cloud Apps: Select <code>All cloud apps</code>.</li>
+                    <li>Conditions: Configure as needed (e.g., exclude trusted locations).</li>
+                    <li>Grant Access: Select <code>Grant access</code> &gt; Require multifactor authentication.</li>
+                    <li>Enable Policy: Set to <code>On</code>.</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>5.3. Build the Splunk Alert and Power Automate Flow</h3>
+
+        <h4>1. Create the Power Automate Flow:</h4>
+        <ul>
+            <li>Create an Automated cloud flow.</li>
+            <li>Trigger: <code>When an HTTP request is received</code>.</li>
+            <li>Copy the generated HTTP POST URL (this is your webhook).</li>
+            <li>Add a new step: <code>Office 365 Outlook &gt; Send an email (V2)</code>.</li>
+            <li>Configure the email:
+                <ul>
+                    <li>To: <code>triggerBody()?['user_email']</code> (dynamic content from Splunk)</li>
+                    <li>Subject: <code>Action Required: Your Account Has Been Locked</code></li>
+                    <li>Body: (HTML recommended)</li>
+                </ul>
+            </li>
+        </ul>
+
+        <pre><code>&lt;html&gt;
+Hello,&lt;br&gt;&lt;br&gt;
+For your security, your account has been locked due to multiple failed login attempts.&lt;br&gt;&lt;br&gt;
+You can immediately unlock it by resetting your password here:&lt;br&gt;
+&lt;a href="https://passwordreset.microsoftonline.com"&gt;Reset My Password&lt;/a&gt;&lt;br&gt;&lt;br&gt;
+If you did not attempt to log in, please contact the IT Help Desk immediately.
+&lt;/html&gt;</code></pre>
+
+        <h4>2. Create the Splunk Alert:</h4>
+        <ul>
+            <li>Search Query:</li>
+        </ul>
+        <pre><code>source="WinEventLog:Security" EventCode=4740
+| table _time, User_Name
+| eval user_email = User_Name . "@yourcompany.com"</code></pre>
+        <ul>
+            <li>Save As Alert:
+                <ul>
+                    <li>Alert Name: <code>Azure AD User Lockout Alert</code></li>
+                    <li>Trigger: <code>Per-result</code></li>
+                    <li>Add Action: <code>Webhook</code></li>
+                    <li>URL: Paste the Power Automate webhook URL here.</li>
+                    <li>Payload: (This is the data sent to the webhook)</li>
+                </ul>
+            </li>
+        </ul>
+        <pre><code>{
+  "user_name": "{result.User_Name}",
+  "user_email": "{result.user_email}"
+}</code></pre>
+
+        <h2>6. User Experience & Messaging</h2>
+        <ul>
+            <li><strong>Lockout Notification Email:</strong> The user receives a clear, friendly email with a direct link to the SSPR portal within seconds of the lockout.</li>
+            <li><strong>Password Reset:</strong> The user follows the SSPR process to verify their identity and set a new password. Successfully resetting their password automatically unlocks the account.</li>
+            <li><strong>Secure Re-Authentication:</strong> Upon attempting to log in with the new password, the user is challenged by the Conditional Access policy to complete MFA.</li>
+            <li><strong>Failure Path:</strong> If the user cannot complete SSPR or MFA, the account remains locked. The SSPR and Azure login screens will provide generic failure messages instructing the user to contact their system administrator, directing them to the IT Help Desk.</li>
+        </ul>
+
+        <h2>7. Support & Contact</h2>
+        <p>Users who cannot successfully reset their password or complete MFA must contact the IT Help Desk for manual account recovery and verification.</p>
+        <p><strong>IT Help Desk Contact Information:</strong></p>
+        <ul>
+            <li>Phone: [1-800-XXXXXXX]</li>
+            <li>Email: [support@yourcompany.com]</li>
+            <li>Portal: [https://ithelp.yourcompany.com]</li>
+        </ul>
+
+        <h2>Document Revision History</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Version</th>
+                    <th>Author</th>
+                    <th>Changes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2024-05-13</td>
+                    <td>1.0</td>
+                    <td>Munawar Usman</td>
+                    <td>Initial document creation</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function downloadPage() {
+            const htmlContent = document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Automated_User_Account_Recovery_Workflow.html';
+            document.body.appendChild(a);
+            a.click();
+            
+            // Clean up
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+    </script>
+</body>
+</html>
